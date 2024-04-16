@@ -1,0 +1,31 @@
+#chat-messages {
+  height: calc(70vh - 120px); /* 聊天窗口高度為屏幕高度的 70% 減去固定的高度 */
+  overflow-y: scroll; /* 啟用垂直滾動 */
+}
+
+.container-fluid {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.message {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+body, html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.card {
+  position: fixed; /* 固定在頁面左上角 */
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  padding: 10px;
+  background-color: #f8f9fa; /* 背景色 */
+}
+

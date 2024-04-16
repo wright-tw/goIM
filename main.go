@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -21,13 +22,6 @@ type ServerStats struct {
 
 var Stats = ServerStats{}
 
-type Room struct {
-	UserIds []int
-	Msgs    []string
-}
-
-var room1 = Room{}
-
 var NowUserIncr int64 = 0
 
 type UserConnsStruct struct {
@@ -41,9 +35,26 @@ var UserIncr = 0
 func main() {
 
 	go showPeople()
+	server := gin.Default()
 
-	router := gin.Default()
-	router.GET("/ws", func(c *gin.Context) {
+	// 靜態資料
+	server.LoadHTMLGlob("src/views/*.html")
+	server.Static("static", "src/views/assets")
+
+	server.GET("/", func(c *gin.Context) {
+		// 渲染HTML模板並回應
+		c.HTML(http.StatusOK, "index", gin.H{
+			"title": "Gin ChatRoom",
+		})
+	})
+
+	server.GET("/ws", func(c *gin.Context) {
+
+		username := c.Query("name")
+		if username == "" {
+			username = "No Name"
+		}
+		fmt.Println(username)
 
 		// 升級連線
 		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -60,23 +71,29 @@ func main() {
 		addPeople()
 		defer subPeople()
 
-		// 房間人數增加
-		room1.UserIds = append(room1.UserIds, userId)
+		// 歡迎語
+		sendText(ws, "Server hello!")
 
-		sendText(ws, "hello!")
 		for {
+			// 處理訊息
 			_, textByte, err := ws.ReadMessage()
 			if err != nil {
 				fmt.Println(err.Error())
 				return
 			}
-
 			text := string(textByte)
-			fmt.Println(text)
+			sendMsgToAllPeople(userId, username, text)
 		}
 	})
 
-	router.Run("127.0.0.1:8081")
+	server.Run(":8081")
+}
+
+func sendMsgToAllPeople(userId int, username string, msg string) {
+	// 發給其他人
+	for _, conn := range UserConns.ConnMap {
+		sendText(conn, username+": "+msg)
+	}
 }
 
 func sendText(conn *websocket.Conn, msg string) {
@@ -93,9 +110,8 @@ func addPeople() {
 
 func showPeople() {
 	for {
-		fmt.Println("目前有 " + strconv.Itoa(Stats.People) + " 人")
-		fmt.Println(UserConns.ConnMap)
-		time.Sleep(time.Second)
+		fmt.Println(time.Now().Format("2006-01-02 15:04:05") + " 目前有 " + strconv.Itoa(Stats.People) + " 人")
+		time.Sleep(time.Second * 3)
 	}
 }
 
