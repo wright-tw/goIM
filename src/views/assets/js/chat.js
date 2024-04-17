@@ -1,5 +1,5 @@
 // 提示用戶輸入用戶名
-const username = prompt("Please enter your username:");
+const username = prompt("請輸入聊天室想用的名稱:");
 
 // 如果用戶名不是空的，則將其存儲在localStorage中
 if (username.trim() !== "") {
@@ -12,7 +12,7 @@ if (username.trim() !== "") {
 const currentDomain = window.location.hostname;
 const currentPort = window.location.port;
 const socket = new WebSocket(
-  "ws://" + currentDomain + ":" + currentPort + "/ws?name=" + username
+  "wss://" + currentDomain + ":" + currentPort + "/ws?name=" + username
 );
 
 socket.onopen = function (event) {
@@ -60,18 +60,23 @@ function getColorCodeByString(str) {
   // 初始化色碼值
   let colorCode = "#";
 
-  // 迴圈遍歷字串的每個字元
-  for (let i = 0; i < str.length; i++) {
+  // 使用 Set 來存儲字串中的唯一 Unicode 編碼值
+  const uniqueChars = new Set([...str]);
+
+  // 將 Set 轉換為數組，並根據 Unicode 編碼值排序
+  const sortedUniqueChars = Array.from(uniqueChars).sort();
+
+  // 迴圈遍歷排序後的唯一字元
+  for (const char of sortedUniqueChars) {
     // 取得字元的 Unicode 編碼值
-    const charCode = str.charCodeAt(i);
-    // 將編碼值轉換為十六進制字串
-    const hexCode = charCode.toString(16);
-    // 將十六進制字串補零至兩位
-    const paddedHexCode = hexCode.padStart(2, "0");
-    // 將補零後的十六進制字串添加到色碼中
-    colorCode += paddedHexCode;
+    const charCode = char.charCodeAt(0);
+    // 根據字元的編碼值計算對應的色碼部分
+    const colorPart = (charCode % 255).toString(16); // 將編碼值取模 255，再轉換為十六進制字串
+    // 將色碼部分添加到色碼中
+    colorCode += colorPart.padStart(2, "0"); // 補零至兩位
   }
 
   // 返回生成的色碼
   return colorCode;
 }
+
