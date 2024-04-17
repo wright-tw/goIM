@@ -8,9 +8,21 @@
   padding-left: 0;
 }
 
-.message {
-  margin-top: 10px;
-  margin-bottom: 10px;
+.message-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px; /* 設置頭像和訊息之間的底部距離 */
+}
+
+.avatar {
+  width: 50px;
+  height: 50px;
+  margin-right: 10px; /* 設置頭像容器右側距離 */
+}
+
+.message-content {
+  /* 添加 margin-left 以設置訊息內容容器與頭像容器之間的距離 */
+  margin-left: 10px;
 }
 
 body, html {
