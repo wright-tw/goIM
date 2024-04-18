@@ -54,6 +54,9 @@ func main() {
 		defer sendOnlineCountToAllPeople()
 		defer subPeople()
 
+		// 推送最近100條訊息
+		sendHistoryMsg(ws)
+
 		for {
 			// 處理訊息
 			_, textByte, err := ws.ReadMessage()

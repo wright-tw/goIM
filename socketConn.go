@@ -23,6 +23,8 @@ var UserIncr int = 0
 
 var ServerName = "Server"
 
+var HistoryMsgs = []string{}
+
 func registerConn(ws *websocket.Conn, username string) int {
 	UserConns.Lock.Lock()
 
@@ -63,6 +65,15 @@ func sendMsgToPeople(ws *websocket.Conn, action int, username string, msg string
 	mData["username"] = username
 	mData["msg"] = msg
 	jsonMsg := encode.JSONEncode(mData)
+
+	// 普通訊息存起來
+	if action == ACTION_MSG {
+		if len(HistoryMsgs) > 100 {
+			HistoryMsgs = HistoryMsgs[1:] // 刪除切片中的第一個元素（最舊的數據）
+		}
+		HistoryMsgs = append(HistoryMsgs, jsonMsg)
+	}
+
 	sendText(ws, jsonMsg)
 }
 
@@ -77,5 +88,11 @@ func sendOnlineCount(ws *websocket.Conn) {
 func sendOnlineCountToAllPeople() {
 	for _, conn := range UserConns.ConnMap {
 		sendOnlineCount(conn)
+	}
+}
+
+func sendHistoryMsg(ws *websocket.Conn) {
+	for _, oldJsonMsg := range HistoryMsgs {
+		sendText(ws, oldJsonMsg)
 	}
 }
