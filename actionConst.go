@@ -1,0 +1,8 @@
+package main
+
+const (
+	ACTION_SYSTEM_MSG = iota + 1
+	ACTION_MSG
+	ACTION_CHANGE_NAME
+	ACTION_ONLINE_PEOPLE
+)

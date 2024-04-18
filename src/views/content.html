@@ -1,9 +1,15 @@
 {{block "content" .}}
-  <div class="container-fluid mt-5">
+<div class="container-fluid mt-5">
   <div class="row">
     <div class="col-md-6 offset-md-3">
       <div class="card">
-        <div class="card-header">WebSocket Chat</div>
+        <div class="card-header">
+          <div class="card-header" id="online_people_count_wrapper">
+            WebSocket Chat (Online:
+            <div id="online_people_count"></div>
+            )
+          </div>
+        </div>
         <div class="card-body" id="chat-messages">
           <!-- 聊天消息將顯示在這裡 -->
         </div>

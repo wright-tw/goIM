@@ -41,3 +41,13 @@ body, html {
   background-color: #f8f9fa; /* 背景色 */
 }
 
+#online_people_count_wrapper {
+  white-space: nowrap; /* 保持內容在同一行，不換行 */
+}
+
+#online_people_count {
+  display: inline; /* 使在線人數內容在同一行顯示 */
+  font-weight: bold;
+  color: red;
+}
+
