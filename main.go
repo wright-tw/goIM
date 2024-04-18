@@ -7,6 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 是否為改名
+const (
+	IS_RENAME_TRUE  = "1"
+	IS_RENAME_FALSE = "2"
+)
+
 func main() {
 
 	go logPeople()
@@ -26,6 +32,11 @@ func main() {
 	server.GET("/ws", func(c *gin.Context) {
 
 		username := c.Query("name")
+		isRename := c.Query("rename")
+		if isRename == "" {
+			isRename = IS_RENAME_FALSE
+		}
+
 		if username == "" {
 			username = "No Name"
 		}
@@ -55,7 +66,9 @@ func main() {
 		defer subPeople()
 
 		// 推送最近100條訊息
-		sendHistoryMsg(ws)
+		if isRename == IS_RENAME_FALSE {
+			sendHistoryMsg(ws)
+		}
 
 		for {
 			// 處理訊息

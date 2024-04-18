@@ -4,6 +4,7 @@ import (
 	"goIM/pkg/encode"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -23,11 +24,11 @@ var UserIncr int = 0
 
 var ServerName = "Server"
 
+// 歷史訊息
 var HistoryMsgs = []string{}
 
 func registerConn(ws *websocket.Conn, username string) int {
 	UserConns.Lock.Lock()
-
 	if UserConns.ConnMap == nil {
 		UserConns.ConnMap = make(map[int]*websocket.Conn)
 	}
@@ -51,6 +52,7 @@ func getMsgMap() map[string]interface{} {
 		"action":   nil,
 		"username": nil,
 		"msg":      nil,
+		"time":     time.Now().Format("2006-01-02 15:04:05"),
 	}
 }
 func sendMsgToAllPeople(action int, username string, msg string) {
@@ -64,6 +66,7 @@ func sendMsgToPeople(ws *websocket.Conn, action int, username string, msg string
 	mData["action"] = action
 	mData["username"] = username
 	mData["msg"] = msg
+
 	jsonMsg := encode.JSONEncode(mData)
 
 	// 普通訊息存起來

@@ -51,3 +51,7 @@ body, html {
   color: red;
 }
 
+.time-content {
+  font-size: 12px;
+  color: gray;
+}

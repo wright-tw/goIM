@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
   const ACTION_SYSTEM_MSG = 1;
   const ACTION_MSG = 2;
   const ACTION_CHANGE_NAME = 3;
@@ -14,34 +14,37 @@ $(document).ready(function() {
   }
   let socket = new WebSocket(
     wsProtocol +
-    "://" +
-    currentDomain +
-    ":" +
-    currentPort +
-    "/ws?name=" +
-    username
+      "://" +
+      currentDomain +
+      ":" +
+      currentPort +
+      "/ws?name=" +
+      username
   );
 
   // 啟動心跳定時器
   const heartbeatTimer = setInterval(heartbeat, 5000);
 
   // 處理接收到的訊息
-  socket.onmessage = function(event) {
+  socket.onmessage = function (event) {
     handleMessage(event);
   };
 
   // 當 WebSocket 連接關閉時，清除心跳定時器
-  socket.onclose = function(event) {
+  socket.onclose = function (event) {
     clearInterval(heartbeatTimer);
   };
 
   // 當 WebSocket 連接打開時的處理函數
-  socket.onopen = function(event) {
+  socket.onopen = function (event) {
     console.log("WebSocket connected");
   };
 
   // 處理接收到的訊息
   function handleMessage(event) {
+    if (event.data == "pong") {
+      return;
+    }
     const data = JSON.parse(event.data);
     const action = data.action;
     switch (action) {
@@ -62,19 +65,31 @@ $(document).ready(function() {
   function handleRegularMessage(data) {
     const msgUsername = data.username ?? "";
     const msgString = data.msg ?? "";
-    const messageContainer = createMessageContainer(msgUsername, msgString);
+    const timeString = data.time ?? "";
+    const messageContainer = createMessageContainer(
+      msgUsername,
+      msgString,
+      timeString
+    );
     $("#chat-messages").append(messageContainer);
     $("#chat-messages").scrollTop($("#chat-messages")[0].scrollHeight);
   }
 
-
-  // 建立訊息容器
-  function createMessageContainer(username, message) {
+  function createMessageContainer(username, message, timeString) {
     const avatar = generateAvatarFromString(username);
     const messageDiv = $("<div>")
       .addClass("message-content")
-      .text(username + " : " + message);
-    const messageContainer = $("<div>").addClass("message-container").append(avatar, messageDiv).css("margin-bottom", "10px");
+      .text(username + " : " + message)
+      .css("font-size", "20px");
+    const timeDiv = $("<div>")
+      .addClass("time-content")
+      .text(timeString)
+      .css("margin-top", "5px") // 將時間標記的上邊距設置為 5px
+      .css("margin-left", "5px"); // 將時間標記與訊息之間的左邊距設置為 5px
+    const messageContainer = $("<div>")
+      .addClass("message-container")
+      .append(avatar, messageDiv, timeDiv)
+      .css("margin-bottom", "20px"); // 將訊息容器的下邊距設置為 20px
     return messageContainer;
   }
 
@@ -160,10 +175,52 @@ $(document).ready(function() {
   $("#send-button").on("click", sendMessage);
 
   // 監聽輸入框按下 Enter 鍵事件
-  $("#message-input").on("keypress", function(event) {
+  $("#message-input").on("keypress", function (event) {
     if (event.keyCode === 13) {
       sendMessage();
     }
   });
-});
 
+  // 監聽更換用戶名按鈕點擊事件
+  $("#change-username-button").on("click", function () {
+    // 提示用戶輸入新的用戶名
+    let newUsername = prompt("請重新輸入想要的聊天室用戶名:");
+    if (newUsername.trim() !== "") {
+      // 更新 localStorage 中的用戶名
+      localStorage.setItem("username", newUsername);
+      // 重新連接 WebSocket 並使用新的用戶名
+      reconnectWebSocket(newUsername);
+    }
+  });
+
+  // 重新連接 WebSocket 的方法
+  function reconnectWebSocket(newUsername) {
+    // 關閉原來的 WebSocket 連接
+    socket.close();
+
+    // 建立新的 WebSocket 連接
+    socket = new WebSocket(
+      wsProtocol +
+        "://" +
+        currentDomain +
+        ":" +
+        currentPort +
+        "/ws?name=" +
+        newUsername +
+        "&rename=" +
+        1
+    );
+
+    // 重新設置 WebSocket 事件處理函數
+    socket.onmessage = function (event) {
+      handleMessage(event);
+    };
+    socket.onclose = function (event) {
+      clearInterval(heartbeatTimer);
+    };
+    socket.onopen = function (event) {
+      console.log("WebSocket connected");
+    };
+  }
+
+});
