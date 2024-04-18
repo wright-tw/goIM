@@ -22,15 +22,13 @@ type ServerStats struct {
 
 var Stats = ServerStats{}
 
-var NowUserIncr int64 = 0
-
 type UserConnsStruct struct {
 	Lock    sync.Mutex
 	ConnMap map[int]*websocket.Conn
 }
 
 var UserConns = UserConnsStruct{}
-var UserIncr = 0
+var UserIncr int = 0
 
 func main() {
 
@@ -63,16 +61,16 @@ func main() {
 		}
 		defer ws.Close()
 
+		// 歡迎語
+		sendText(ws, "Server: hello!")
+
 		// 連線處理
-		userId := registerConn(ws)
-		defer unregisterConn(userId)
+		userId := registerConn(ws, username)
+		defer unregisterConn(userId, username)
 
 		// 增加人數
 		addPeople()
 		defer subPeople()
-
-		// 歡迎語
-		sendText(ws, "Server hello!")
 
 		for {
 			// 處理訊息
@@ -82,17 +80,25 @@ func main() {
 				return
 			}
 			text := string(textByte)
-			sendMsgToAllPeople(userId, username, text)
+
+			// 處理心跳
+			if text == "ping" {
+				sendText(ws, "pong")
+				continue
+			}
+
+			// 處理訊息
+			sendMsgToAllPeople(username + ": " + text)
 		}
 	})
 
 	server.Run(":8081")
 }
 
-func sendMsgToAllPeople(userId int, username string, msg string) {
+func sendMsgToAllPeople(msg string) {
 	// 發給其他人
 	for _, conn := range UserConns.ConnMap {
-		sendText(conn, username+": "+msg)
+		sendText(conn, msg)
 	}
 }
 
@@ -115,20 +121,23 @@ func showPeople() {
 	}
 }
 
-func registerConn(c *websocket.Conn) int {
+func registerConn(ws *websocket.Conn, username string) int {
 	UserConns.Lock.Lock()
 
 	if UserConns.ConnMap == nil {
 		UserConns.ConnMap = make(map[int]*websocket.Conn)
 	}
 	UserIncr++
-	UserConns.ConnMap[UserIncr] = c
+	UserConns.ConnMap[UserIncr] = ws
 	UserConns.Lock.Unlock()
+
+	sendMsgToAllPeople("Server: " + username + " 已進入房間")
 	return UserIncr
 }
 
-func unregisterConn(userId int) {
+func unregisterConn(userId int, username string) {
 	if UserConns.ConnMap != nil {
 		delete(UserConns.ConnMap, userId)
 	}
+	sendMsgToAllPeople("Server: " + username + " 已離開房間")
 }

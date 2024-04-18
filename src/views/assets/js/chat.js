@@ -17,14 +17,33 @@ let socket = new WebSocket(
     username
 );
 
+// 啟動心跳定時器
+const heartbeatTimer = setInterval(heartbeat, 5000);
+
+// 建立心跳方法
+function heartbeat() {
+  // 發送心跳訊號到服務器（這裡假設使用 socket 變數代表 WebSocket 連接）
+  socket.send("ping");
+}
+
+// 當 WebSocket 連接關閉時，清除心跳定時器
+socket.onclose = function (event) {
+  clearInterval(heartbeatTimer);
+};
+
 socket.onopen = function (event) {
   console.log("WebSocket connected");
 };
 
 socket.onmessage = function (event) {
-  let parts = event.data.split(":");
+  let msg = event.data;
+  let parts = msg.split(":");
   let msgUsername = parts[0] ?? "";
   let msgString = parts[1] ?? "";
+
+  if (msg == "pong") {
+    return;
+  }
 
   // 創建一個包含頭像和訊息的 div 元素
   const messageContainer = document.createElement("div");
@@ -36,7 +55,7 @@ socket.onmessage = function (event) {
 
   // 製作訊息
   const messageDiv = document.createElement("div");
-  messageDiv.textContent = event.data;
+  messageDiv.textContent = msg;
   messageDiv.classList.add("message-content"); // 添加 message-content 類
   messageContainer.appendChild(messageDiv);
 
@@ -122,7 +141,6 @@ function generateAvatarFromString(text) {
   return canvas;
 }
 
-
 function hashCode(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -139,4 +157,3 @@ function intToRGB(i) {
 function getColorCodeByString(str) {
   return intToRGB(hashCode(str));
 }
-
