@@ -79,17 +79,13 @@ $(document).ready(function () {
     const avatar = generateAvatarFromString(username);
     const messageDiv = $("<div>")
       .addClass("message-content")
-      .text(username + " : " + message)
-      .css("font-size", "20px");
+      .text(username + " : " + message);
     const timeDiv = $("<div>")
       .addClass("time-content")
-      .text(timeString)
-      .css("margin-top", "5px") // 將時間標記的上邊距設置為 5px
-      .css("margin-left", "5px"); // 將時間標記與訊息之間的左邊距設置為 5px
+      .text(timeString);
     const messageContainer = $("<div>")
       .addClass("message-container")
-      .append(avatar, messageDiv, timeDiv)
-      .css("margin-bottom", "20px"); // 將訊息容器的下邊距設置為 20px
+      .append(avatar, messageDiv, timeDiv);
     return messageContainer;
   }
 

@@ -15,12 +15,12 @@ var upgrader = websocket.Upgrader{
 }
 
 type UserConnsStruct struct {
-	Lock        sync.Mutex
-	ConnMap     map[int]*websocket.Conn
-	ConnLockMap map[*websocket.Conn]*sync.Mutex
+	userIncrLock sync.Mutex
+	ConnMap      sync.Map // user_incr => conn
+	ConnLockMap  sync.Map // ws => mutx
 }
 
-var UserConns = UserConnsStruct{}
+var UserConns = UserConnsStruct{sync.Mutex{}, sync.Map{}, sync.Map{}}
 var UserIncr int = 0
 
 var ServerName = "Server"
@@ -29,30 +29,19 @@ var ServerName = "Server"
 var HistoryMsgs = []string{}
 
 func registerConn(ws *websocket.Conn, username string) int {
-	UserConns.Lock.Lock()
-	defer UserConns.Lock.Unlock()
 
-	if UserConns.ConnMap == nil {
-		UserConns.ConnMap = make(map[int]*websocket.Conn)
-	}
-	if UserConns.ConnLockMap == nil {
-		UserConns.ConnLockMap = make(map[*websocket.Conn]*sync.Mutex)
-	}
+	UserConns.userIncrLock.Lock()
 	UserIncr++
-	UserConns.ConnMap[UserIncr] = ws
-	UserConns.ConnLockMap[ws] = &sync.Mutex{}
-
+	UserConns.ConnMap.Store(UserIncr, ws)
+	UserConns.userIncrLock.Unlock()
+	UserConns.ConnLockMap.Store(ws, &sync.Mutex{})
 	sendMsgToAllPeople(ACTION_SYSTEM_MSG, ServerName, username+" 已進入房間")
 	return UserIncr
 }
 
 func unregisterConn(ws *websocket.Conn, userId int, username string) {
-	if UserConns.ConnMap != nil {
-		delete(UserConns.ConnMap, userId)
-	}
-	if UserConns.ConnLockMap != nil {
-		delete(UserConns.ConnLockMap, ws)
-	}
+	UserConns.ConnMap.Delete(userId)
+	UserConns.ConnLockMap.Delete(ws)
 	sendMsgToAllPeople(ACTION_SYSTEM_MSG, ServerName, username+" 已離開房間")
 }
 
@@ -61,13 +50,16 @@ func getMsgMap() map[string]interface{} {
 		"action":   nil,
 		"username": nil,
 		"msg":      nil,
-		"time":     time.Now().Format("2006-01-02 15:04:05"),
+		// "time":     time.Now().Format("2006-01-02 15:04:05"),
+		"time": time.Now().Format("15:04"),
 	}
 }
 func sendMsgToAllPeople(action int, username string, msg string) {
-	for _, conn := range UserConns.ConnMap {
-		sendMsgToPeople(conn, action, username, msg)
-	}
+	UserConns.ConnMap.Range(func(_, conn interface{}) bool {
+		connTyped := conn.(*websocket.Conn)
+		sendMsgToPeople(connTyped, action, username, msg)
+		return true // 继续遍历
+	})
 }
 
 func sendMsgToPeople(ws *websocket.Conn, action int, username string, msg string) {
@@ -90,10 +82,15 @@ func sendMsgToPeople(ws *websocket.Conn, action int, username string, msg string
 }
 
 func sendText(ws *websocket.Conn, msg string) {
+	// 同一個 socket client 同時只能寫一次
+	lockInterface, _ := UserConns.ConnLockMap.Load(ws)
+	if lockInterface == nil {
+		return
+	}
+	lock := lockInterface.(*sync.Mutex)
+	lock.Lock()
+	defer lock.Unlock()
 
-	// 同一個 socket client 只能寫一次
-	UserConns.ConnLockMap[ws].Lock()
-	defer UserConns.ConnLockMap[ws].Unlock()
 	ws.WriteMessage(websocket.TextMessage, []byte(msg))
 }
 
@@ -102,9 +99,11 @@ func sendOnlineCount(ws *websocket.Conn) {
 }
 
 func sendOnlineCountToAllPeople() {
-	for _, conn := range UserConns.ConnMap {
-		sendOnlineCount(conn)
-	}
+	UserConns.ConnMap.Range(func(_, conn interface{}) bool {
+		connTyped := conn.(*websocket.Conn)
+		sendOnlineCount(connTyped)
+		return true // 继续遍历
+	})
 }
 
 func sendHistoryMsg(ws *websocket.Conn) {

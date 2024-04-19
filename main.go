@@ -90,5 +90,5 @@ func main() {
 		}
 	})
 
-	server.Run("127.0.0.1:8081")
+	server.Run(":8081")
 }

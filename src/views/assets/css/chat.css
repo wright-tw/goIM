@@ -11,18 +11,15 @@
 .message-container {
   display: flex;
   align-items: center;
-  margin-bottom: 10px; /* 設置頭像和訊息之間的底部距離 */
+  margin-bottom: 25px; /* 設置頭像和訊息之間的底部距離 */
 }
 
-.avatar {
-  width: 50px;
-  height: 50px;
-  margin-right: 10px; /* 設置頭像容器右側距離 */
-}
 
 .message-content {
   /* 添加 margin-left 以設置訊息內容容器與頭像容器之間的距離 */
   margin-left: 10px;
+  overflow-wrap: break-word; /* 自動斷行 */
+  overflow-x: hidden; /* 鎖住水平捲動 */
 }
 
 body, html {
@@ -41,6 +38,11 @@ body, html {
   background-color: #f8f9fa; /* 背景色 */
 }
 
+.card-footer {
+  margin-top: 10px; /* 调整 card-footer 的上边距 */
+  font-size: 16px; /* 调整文字大小 */
+}
+
 #online_people_count_wrapper {
   white-space: nowrap; /* 保持內容在同一行，不換行 */
 }
@@ -54,4 +56,56 @@ body, html {
 .time-content {
   font-size: 12px;
   color: gray;
+  margin-top: auto; /* 将 time 元素位置调整到底部 */
+  margin-left: 5px;
+}
+
+/* 大屏幕样式 */
+@media only screen and (min-device-width: 375px) and (max-device-width: 812px) and (-webkit-device-pixel-ratio: 3) {
+  #chat-messages {
+    height: calc(80vh - 120px);
+  }
+
+  .message-container {
+    margin-bottom: 8px;
+    font-size: 16px; /* 调整字体大小 */
+  }
+}
+
+/* 小屏幕样式 */
+@media only screen and (max-device-width: 395px) {
+  #chat-messages {
+    height: calc(60vh - 120px);
+  }
+
+  .card-header {
+    font-size: 60px;
+  }
+
+  .message-container {
+    margin-bottom: 6px;
+    font-size: 55px; /* 调整字体大小 */
+  }
+
+  .time-content {
+    font-size: 20px;
+  }
+
+  .card-footer {
+    margin-top: 6px; /* 调整 card-footer 的上边距 */
+    display: block; /* 确保在小屏幕上显示 */
+  }
+
+  .btn {
+    font-size: 2rem;
+  }
+
+  #message-input {
+    font-size: 3rem;
+  }
+
+  #send-button {
+    display: none;
+  }
+
 }
