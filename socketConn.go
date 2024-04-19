@@ -55,14 +55,7 @@ func getMsgMap() map[string]interface{} {
 	}
 }
 func sendMsgToAllPeople(action int, username string, msg string) {
-	UserConns.ConnMap.Range(func(_, conn interface{}) bool {
-		connTyped := conn.(*websocket.Conn)
-		sendMsgToPeople(connTyped, action, username, msg)
-		return true // 继续遍历
-	})
-}
 
-func sendMsgToPeople(ws *websocket.Conn, action int, username string, msg string) {
 	mData := getMsgMap()
 	mData["action"] = action
 	mData["username"] = username
@@ -78,6 +71,19 @@ func sendMsgToPeople(ws *websocket.Conn, action int, username string, msg string
 		HistoryMsgs = append(HistoryMsgs, jsonMsg)
 	}
 
+	UserConns.ConnMap.Range(func(_, conn interface{}) bool {
+		connTyped := conn.(*websocket.Conn)
+		sendText(connTyped, jsonMsg)
+		return true // 继续遍历
+	})
+}
+
+func sendMsgToPeople(ws *websocket.Conn, action int, username string, msg string) {
+	mData := getMsgMap()
+	mData["action"] = action
+	mData["username"] = username
+	mData["msg"] = msg
+	jsonMsg := encode.JSONEncode(mData)
 	sendText(ws, jsonMsg)
 }
 
