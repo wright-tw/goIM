@@ -49,12 +49,12 @@ func main() {
 		}
 		defer ws.Close()
 
-		// 歡迎語
-		sendMsgToPeople(ws, ACTION_SYSTEM_MSG, ServerName, "hello")
-
 		// 連線處理
 		userId := registerConn(ws, username)
-		defer unregisterConn(userId, username)
+		defer unregisterConn(ws, userId, username)
+
+		// 歡迎語
+		sendMsgToPeople(ws, ACTION_SYSTEM_MSG, ServerName, "hello")
 
 		// 增加人數
 		addPeople()

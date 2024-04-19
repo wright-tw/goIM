@@ -15,8 +15,9 @@ var upgrader = websocket.Upgrader{
 }
 
 type UserConnsStruct struct {
-	Lock    sync.Mutex
-	ConnMap map[int]*websocket.Conn
+	Lock        sync.Mutex
+	ConnMap     map[int]*websocket.Conn
+	ConnLockMap map[*websocket.Conn]*sync.Mutex
 }
 
 var UserConns = UserConnsStruct{}
@@ -29,20 +30,28 @@ var HistoryMsgs = []string{}
 
 func registerConn(ws *websocket.Conn, username string) int {
 	UserConns.Lock.Lock()
+	defer UserConns.Lock.Unlock()
+
 	if UserConns.ConnMap == nil {
 		UserConns.ConnMap = make(map[int]*websocket.Conn)
 	}
+	if UserConns.ConnLockMap == nil {
+		UserConns.ConnLockMap = make(map[*websocket.Conn]*sync.Mutex)
+	}
 	UserIncr++
 	UserConns.ConnMap[UserIncr] = ws
-	UserConns.Lock.Unlock()
+	UserConns.ConnLockMap[ws] = &sync.Mutex{}
 
 	sendMsgToAllPeople(ACTION_SYSTEM_MSG, ServerName, username+" 已進入房間")
 	return UserIncr
 }
 
-func unregisterConn(userId int, username string) {
+func unregisterConn(ws *websocket.Conn, userId int, username string) {
 	if UserConns.ConnMap != nil {
 		delete(UserConns.ConnMap, userId)
+	}
+	if UserConns.ConnLockMap != nil {
+		delete(UserConns.ConnLockMap, ws)
 	}
 	sendMsgToAllPeople(ACTION_SYSTEM_MSG, ServerName, username+" 已離開房間")
 }
@@ -81,6 +90,10 @@ func sendMsgToPeople(ws *websocket.Conn, action int, username string, msg string
 }
 
 func sendText(ws *websocket.Conn, msg string) {
+
+	// 同一個 socket client 只能寫一次
+	UserConns.ConnLockMap[ws].Lock()
+	defer UserConns.ConnLockMap[ws].Unlock()
 	ws.WriteMessage(websocket.TextMessage, []byte(msg))
 }
 
